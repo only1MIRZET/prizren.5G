@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<title>Prizren 5G - mapa mreže</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root { --panel:#fff; --ink:#1c2430; --mute:#5f6b7a; --line:#e1e5ea; --acc:#d6006e; --blue:#1f6feb; --ok:#1a9641; }
+* { box-sizing:border-box; }
+html, body { margin:0; height:100%; font-family:'Segoe UI', system-ui, Arial, sans-serif; color:var(--ink); font-size:14.5px; background:#eef1f5; }
+#app { display:flex; height:100vh; width:100vw; overflow:hidden; }
+#side { width:330px; min-width:330px; background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; padding-bottom:30px; z-index:5; }
+#side.hidden { display:none; }
+#side h1 { font-size:20px; margin:0; padding:16px 18px 2px; }
+#side .sub { color:var(--mute); padding:0 18px 12px; font-size:13px; }
+.blk { padding:12px 18px; border-top:1px solid var(--line); }
+.blk h2 { margin:0 0 8px; font-size:15px; }
+.row { display:flex; align-items:center; gap:8px; margin:9px 0; }
+.row label { flex:0 0 118px; color:var(--mute); }
+.row .val { flex:0 0 50px; text-align:right; font-variant-numeric:tabular-nums; }
+.row input[type=range] { flex:1; min-width:0; accent-color:var(--acc); }
+select { width:100%; padding:7px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; }
+button { font:inherit; padding:8px 12px; border:1px solid var(--line); border-radius:9px; background:#fff; cursor:pointer; }
+button:hover { background:#f0f3f7; }
+button.pri { background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600; }
+button.pri:hover { background:#b8005d; }
+.seg { display:flex; gap:6px; flex-wrap:wrap; }
+.seg button { flex:1 1 auto; padding:9px 6px; }
+.seg button.on { background:var(--blue); border-color:var(--blue); color:#fff; font-weight:600; }
+.chk { display:flex; align-items:center; gap:8px; margin:8px 0; }
+.chk input { accent-color:var(--acc); width:17px; height:17px; }
+.note { color:var(--mute); font-size:13px; line-height:1.45; margin:6px 0; }
+#mapwrap { position:relative; flex:1; min-width:0; background:#dfe6ec; }
+#map { position:absolute; inset:0; cursor:grab; touch-action:none; }
+#toolbar { position:absolute; top:10px; left:50%; transform:translateX(-50%); display:flex; gap:4px; background:rgba(255,255,255,.96); padding:5px; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.25); z-index:10; }
+#toolbar button { border:none; padding:8px 13px; font-weight:600; background:transparent; }
+#toolbar button.on { background:var(--acc); color:#fff; }
+#toolbar button.tour { background:#fff4a8; }
+#toolbar .sep { width:1px; background:var(--line); margin:3px 4px; }
+#sidebtn { position:absolute; top:10px; left:10px; z-index:10; background:rgba(255,255,255,.96); border:none; font-weight:700; box-shadow:0 2px 10px rgba(0,0,0,.25); }
+#zoombtns { position:absolute; left:10px; top:58px; display:flex; flex-direction:column; gap:4px; z-index:10; }
+#zoombtns button { width:36px; height:36px; font-size:19px; font-weight:700; background:rgba(255,255,255,.96); border:none; box-shadow:0 2px 8px rgba(0,0,0,.25); padding:0; }
+#legend { position:absolute; left:10px; bottom:28px; background:rgba(255,255,255,.96); padding:9px 12px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.25); z-index:10; width:250px; font-size:13px; }
+#legend .t { font-weight:700; margin-bottom:6px; }
+#legend .bar { height:12px; border-radius:4px; }
+#legend .lab { display:flex; justify-content:space-between; color:#444; margin-top:3px; font-size:12px; }
+#legend .sw { display:flex; align-items:center; gap:7px; margin:3px 0; }
+#legend .sw i { width:15px; height:13px; display:inline-block; border-radius:3px; }
+#attr { position:absolute; right:6px; bottom:2px; font-size:10.5px; background:rgba(255,255,255,.85); padding:1px 6px; border-radius:4px; z-index:9; max-width:60%; text-align:right; }
+#right { position:absolute; right:10px; top:10px; width:300px; max-height:calc(100% - 44px); overflow-y:auto; z-index:10; display:flex; flex-direction:column; gap:8px; }
+#right.hidden { display:none; }
+.card { background:rgba(255,255,255,.97); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.25); padding:11px 14px; }
+.card h3 { margin:0 0 6px; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
+.stars { font-size:26px; color:#f5a623; letter-spacing:2px; line-height:1; }
+.kpi { margin:9px 0 0; }
+.kpi .n { font-size:21px; font-weight:700; font-variant-numeric:tabular-nums; }
+.kpi .d { color:var(--mute); font-size:12.5px; }
+.good { color:var(--ok); } .bad { color:#c62828; } .warn { color:#d97706; }
+#tour { position:absolute; left:50%; bottom:22px; transform:translateX(-50%); width:min(560px, 62%); background:#fff; border-radius:14px; box-shadow:0 4px 22px rgba(0,0,0,.35); padding:16px 20px; z-index:25; display:none; border-top:5px solid var(--acc); }
+#tour.show { display:block; }
+#tour h2 { margin:0 0 6px; font-size:18px; }
+#tour p { margin:0 0 12px; font-size:15px; line-height:1.5; }
+#tour .nav { display:flex; gap:8px; align-items:center; }
+#tour .dots { flex:1; display:flex; gap:5px; }
+#tour .dots i { width:9px; height:9px; border-radius:50%; background:#d5dae1; display:inline-block; }
+#tour .dots i.on { background:var(--acc); }
+#toast { position:absolute; left:50%; top:70px; transform:translateX(-50%); background:#222; color:#fff; padding:10px 18px; border-radius:10px; z-index:30; opacity:0; transition:opacity .3s; pointer-events:none; max-width:70%; text-align:center; }
+#toast.show { opacity:.95; }
+#dlg { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:50; }
+#dlg.show { display:flex; }
+#dlg .box { background:#fff; border-radius:14px; padding:20px 24px; width:min(700px, 92vw); max-height:88vh; overflow:auto; line-height:1.55; }
+#dlg h2 { margin:0 0 10px; font-size:20px; }
+#dlg h3 { margin:16px 0 4px; font-size:15.5px; color:var(--acc); }
+#dlg p { margin:4px 0; }
+#dlg .dot { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+#spin { position:absolute; inset:0; background:rgba(255,255,255,.6); display:none; align-items:center; justify-content:center; z-index:40; font-size:17px; font-weight:700; }
+#spin.show { display:flex; }
+</style>
+</head>
+<body>
+<div id="app">
+<aside id="side">
+  <h1>📡 Prizren 5G</h1>
+  <div class="sub">Mapa 5G mreže u gradu. Mijenjaj stvari i odmah vidiš šta se desi. (Pozicije antena su izmišljene.)</div>
+
+  <div class="blk"><h2>🗺️ Šta da vidim na mapi?</h2>
+    <div class="seg" id="layerBtns">
+      <button data-layer="rsrp" class="on">Signal</button>
+      <button data-layer="thr">Brzina interneta</button>
+      <button data-layer="diag">Zašto je slabo</button>
+    </div>
+    <div class="row"><label>Providnost boja</label><input type="range" id="opacity" min="10" max="100" value="55"><span class="val" id="opacityV"></span></div>
+    <div class="row"><label>Podloga</label><select id="basemap"></select></div>
+    <div class="chk"><input type="checkbox" id="users" checked><label for="users">Prikaži ljude (tačkice)</label></div>
+  </div>
+
+  <div class="blk"><h2>📶 Koja frekvencija?</h2>
+    <div class="seg" id="bandBtns">
+      <button data-band="0.7">Niska<br><small>700 MHz</small></button>
+      <button data-band="3.5" class="on">Srednja<br><small>3.5 GHz</small></button>
+      <button data-band="26">Visoka<br><small>26 GHz</small></button>
+    </div>
+    <div class="note" id="bandNote"></div>
+  </div>
+
+  <div class="blk"><h2>👥 Koliko je ljudi na mreži?</h2>
+    <div class="seg" id="scenBtns">
+      <button data-scen="noc">🌙 Noć</button><button data-scen="dan">☀️ Dan</button><button data-scen="vecer" class="on">🌆 Večer</button><button data-scen="festival">🎪 Festival</button>
+    </div>
+    <div class="row"><label>Broj ljudi</label><input type="range" id="nusers" min="0" max="1000" step="10" value="200"><span class="val" id="nusersV"></span></div>
+    <div class="note">„Festival“ stavlja veliku gužvu u centar grada.</div>
+  </div>
+
+  <div class="blk"><h2>🗼 Antene</h2>
+    <div id="selBox" style="display:none">
+      <div style="font-weight:700;margin-bottom:4px" id="selName"></div>
+      <div class="row"><label>Jačina antene</label><input type="range" id="sPower" min="30" max="60" step="1"><span class="val" id="sPowerV"></span></div>
+      <div class="row"><label>Okreni antenu</label><input type="range" id="sAz" min="0" max="119" step="1"><span class="val" id="sAzV"></span></div>
+      <div class="chk"><input type="checkbox" id="sActive"><label for="sActive">Antena radi (isključi = kvar)</label></div>
+      <button id="sDel">🗑 Obriši ovu antenu</button>
+    </div>
+    <div class="note" id="selHint">Klikni na antenu (trougao) na mapi da je izabereš. Možeš je i povući na drugo mjesto.</div>
+    <div class="seg" style="margin-top:8px"><button id="addMode">➕ Dodaj antenu</button><button id="suggest">🤖 Gdje staviti 3 nove?</button></div>
+    <div class="seg" style="margin-top:6px"><button id="addSug" class="pri" style="display:none">Dodaj predložene</button><button id="discardSug" style="display:none">Odbaci</button></div>
+    <div class="seg" style="margin-top:6px"><button id="resetNet">↩ Vrati početno stanje</button></div>
+  </div>
+</aside>
+
+<main id="mapwrap">
+  <canvas id="map"></canvas>
+  <button id="sidebtn" title="Sakrij/prikaži lijevi panel">☰</button>
+  <div id="toolbar">
+    <button data-mode="pan" class="on">✋ Pomjeraj</button>
+    <button data-mode="probe">🔍 Zašto je tu slabo?</button>
+    <button data-mode="add">➕ Antena</button>
+    <span class="sep"></span>
+    <button id="tourBtn" class="tour">▶ Vodič</button>
+    <button id="helpBtn">❓ Šta je ovo?</button>
+    <button id="fsBtn" title="Cijeli ekran">⛶</button>
+  </div>
+  <div id="zoombtns"><button id="zin">+</button><button id="zout">−</button></div>
+  <div id="legend"></div>
+  <div id="attr"></div>
+  <aside id="right">
+    <div class="card" id="cardGrade"></div>
+    <div class="card" id="cardProbe" style="display:none"><h3>🔍 Ovdje na mapi <button id="probeClose" style="padding:1px 9px">×</button></h3><div id="probeInfo"></div></div>
+  </aside>
+  <div id="tour"></div>
+  <div id="toast"></div>
+  <div id="spin">Računam…</div>
+</main>
+</div>
+<div id="dlg"><div class="box" id="dlgBox"></div></div>
+<script>
+// =====================================================================
+//  JEZGRO SIMULACIJE (bez DOM-a) - radio model, teren, korisnici, handover
+// =====================================================================
+const RAD = 180 / Math.PI;
+const ORIGIN = { lat: 42.2139, lon: 20.7397 };
+const M_LAT = 111320;
+const M_LON = 111320 * Math.cos(ORIGIN.lat * Math.PI / 180);
+const HALF = 3000;              // polovina zone analize (m) -> 6 x 6 km
+const NG = 150;                 // rezolucija mreže
+const STEP = 2 * HALF / NG;     // 40 m
+const NPT = NG * NG;
+function xy2ll(x, y) { return { lat: ORIGIN.lat + y / M_LAT, lon: ORIGIN.lon + x / M_LON }; }
+function ll2xy(lat, lon) { return { x: (lon - ORIGIN.lon) * M_LON, y: (lat - ORIGIN.lat) * M_LAT }; }
+
+// ---------- slučajni brojevi (može se zadati seed za testove) ----------
+let _seed = null;
+function rand() {
+  if (_seed === null) return Math.random();
+  _seed |= 0; _seed = _seed + 0x6D2B79F5 | 0;
+  let t = Math.imul(_seed ^ _seed >>> 15, 1 | _seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+}
+function setSeed(s) { _seed = s; }
+function randn() {
+  let u = 0, v = 0;
+  while (u === 0) u = rand();
+  while (v === 0) v = rand();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+// ---------- pojasevi i parametri ----------
+const BANDS = {
+  '0.7': { name: '700 MHz (n28) - veliki domet', fc: 0.7, bw: 20, nre: 12 * 106, gain: 16, tx: 49, o2i: 10, maxLayers: 2 },
+  '3.5': { name: '3.5 GHz (n78) - standardni 5G', fc: 3.5, bw: 100, nre: 12 * 273, gain: 21, tx: 53, o2i: 18, maxLayers: 4 },
+  '26':  { name: '26 GHz (n258) - mmWave', fc: 26, bw: 400, nre: 12 * 264, gain: 28, tx: 40, o2i: 35, maxLayers: 2 },
+};
+const P = {
+  band: '3.5', fc: 3.5, bw: 100e6, nre: 3276, gain: 21, o2i: 18, maxLayers: 4, txDefault: 53,
+  hUE: 1.5, nf: 9, dl: 0.7, alpha: 0.75, seMax: 7.4, sinrMin: -8,
+  clutterMax: 6, terrain: true, shadowSigma: 4, hyst: 3, ttt: 0.32,
+  rhoMin: 0.12, actN0: 4, target: 25, indoorShare: 0.6, vehKmh: 40, vehShare: 0.3,
+  lambda: 0.3 / 3.5, fcDb: 20 * Math.log10(3.5), noiseMw: 1, rsrpOffset: 35,
+};
+function deriveParams() {
+  P.lambda = 0.3 / P.fc;
+  P.fcDb = 20 * Math.log10(P.fc);
+  P.noiseMw = Math.pow(10, (-174 + 10 * Math.log10(P.bw) + P.nf) / 10);
+  P.rsrpOffset = 10 * Math.log10(P.nre);
+}
+function applyBand(key) {
+  const b = BANDS[key];
+  P.band = key; P.fc = b.fc; P.bw = b.bw * 1e6; P.nre = b.nre; P.gain = b.gain;
+  P.o2i = b.o2i; P.maxLayers = b.maxLayers; P.txDefault = b.tx;
+  deriveParams();
+}
+deriveParams();
+
+// ---------- teren (DEM) ----------
+const DEM = {
+  ready: false, data: null, w: 0, h: 0, ox: 0, oy: 0, px0: 0, py0: 0, s: 0, base: 0,
+  // data = Float32Array mozaika (w*h) visina u metrima; (px0,py0) = piksel ishodišta u mozaiku; s = piksela po metru
+  setup(data, w, h, px0, py0, s) {
+    this.data = data; this.w = w; this.h = h; this.px0 = px0; this.py0 = py0; this.s = s; this.ready = true;
+    this.base = this.at(0, 0);
+  },
+  clear() { this.ready = false; this.data = null; },
+  at(x, y) {
+    if (!this.ready) return 0;
+    let fx = this.px0 + x * this.s, fy = this.py0 - y * this.s;
+    if (fx < 0) fx = 0; else if (fx > this.w - 1.001) fx = this.w - 1.001;
+    if (fy < 0) fy = 0; else if (fy > this.h - 1.001) fy = this.h - 1.001;
+    const ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy, d = this.data, w = this.w;
+    const a = d[iy * w + ix], b = d[iy * w + ix + 1], c = d[(iy + 1) * w + ix], e = d[(iy + 1) * w + ix + 1];
+    return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + e * tx) * ty;
+  },
+};
+
+// ---------- gradnja i potražnja ----------
+function density(x, y) {
+  let d = 0.90 * Math.exp(-((x - 80) ** 2 + (y - 60) ** 2) / (2 * 480 ** 2));
+  d += 0.50 * Math.exp(-((x + 560) ** 2 + (y - 380) ** 2) / (2 * 420 ** 2));
+  d += 0.35 * Math.exp(-((x + 800) ** 2 + (y + 350) ** 2) / (2 * 400 ** 2));
+  d += 0.30 * Math.exp(-((x - 700) ** 2 + (y + 450) ** 2) / (2 * 400 ** 2));
+  return Math.min(1, d + 0.12);
+}
+const HOTSPOTS = [
+  [0, 0, 260, 1.00], [250, 170, 200, 0.45], [-520, 330, 260, 0.50], [-800, -350, 300, 0.35], [700, -450, 320, 0.30],
+];
+const EV = { x: 0, y: 0, count: 0, sigma: 180, on: true };
+function demand(x, y) {
+  let d = 0.008;
+  for (const h of HOTSPOTS) d += h[3] * Math.exp(-((x - h[0]) ** 2 + (y - h[1]) ** 2) / (2 * h[2] * h[2]));
+  if (DEM.ready) { const e = (DEM.at(x, y) - DEM.base) / 150; d /= (1 + Math.max(0, e) * Math.max(0, e)); }
+  return d;
+}
+
+// ---------- model gubitaka: 3GPP TR 38.901 UMa + teren + gradnja ----------
+let _tl = 0, _clut = 0, _p = 0, _plLos = 0, _plN = 0, _d2 = 0;
+const TSAMP = 12;
+const TFR = new Float64Array(TSAMP);
+for (let i = 0; i < TSAMP; i++) TFR[i] = (i + 1) / (TSAMP + 1);
+
+function terrainLoss(st, x, y, d2) {
+  if (!P.terrain || !DEM.ready || d2 < 150) return -Infinity;
+  const z0 = DEM.at(st.x, st.y) + st.h, z1 = DEM.at(x, y) + P.hUE;
+  const dx = x - st.x, dy = y - st.y;
+  let vmax = -Infinity;
+  const k = 2 / P.lambda;
+  for (let i = 0; i < TSAMP; i++) {
+    const t = TFR[i];
+    const zt = DEM.at(st.x + dx * t, st.y + dy * t);
+    const zl = z0 + (z1 - z0) * t;
+    const d1 = d2 * t, dd = d2 * (1 - t);
+    const v = (zt - zl) * Math.sqrt(k * (d1 + dd) / (d1 * dd + 1e-9));
+    if (v > vmax) vmax = v;
+  }
+  return vmax;
+}
+function knifeEdge(vmax) {
+  if (vmax === -Infinity) return 0;
+  const vm = Math.max(vmax, -0.78);
+  return Math.min(35, 6.9 + 20 * Math.log10(Math.sqrt((vm - 0.1) ** 2 + 1) + vm - 0.1));
+}
+// medijana gubitka (dB) od stanice do tačke; sporedni rezultati u _tl, _clut, _p, _plLos, _plN, _d2
+function plMedian(st, x, y, dens) {
+  const dx = x - st.x, dy = y - st.y;
+  const d2 = Math.max(10, Math.sqrt(dx * dx + dy * dy));
+  const hb = st.h, dh = hb - P.hUE;
+  const d3 = Math.sqrt(d2 * d2 + dh * dh);
+  const dbp = 4 * (hb - 1) * (P.hUE - 1) * P.fc * 1e9 / 3e8;
+  const l10 = Math.log10(d3);
+  const pl1 = 28 + 22 * l10 + P.fcDb;
+  const pl2 = 28 + 40 * l10 + P.fcDb - 9 * Math.log10(dbp * dbp + dh * dh);
+  const plLos = d2 <= dbp ? pl1 : pl2;
+  const plN = Math.max(plLos, 13.54 + 39.08 * l10 + P.fcDb - 0.6 * (P.hUE - 1.5));
+  let p = d2 <= 18 ? 1 : (18 / d2 + Math.exp(-d2 / 63) * (1 - 18 / d2));
+  const vmax = terrainLoss(st, x, y, d2);
+  const tl = knifeEdge(vmax);
+  if (vmax > -0.78) p = 0;
+  const clut = P.clutterMax * (dens === undefined ? density(x, y) : dens);
+  _tl = tl; _clut = clut; _p = p; _plLos = plLos; _plN = plN; _d2 = d2;
+  return p * plLos + (1 - p) * plN + tl + clut;
+}
+function gainAt(angDeg, azDeg) {
+  const phi = ((angDeg - azDeg + 540) % 360) - 180;
+  return P.gain - Math.min(12 * (phi / 65) * (phi / 65), 30);
+}
+function seOf(sinrDb) {
+  if (sinrDb < P.sinrMin) return 0;
+  const s = Math.pow(10, sinrDb / 10);
+  const L = Math.min(P.maxLayers, Math.max(1, 1 + (sinrDb - 6) / 6));
+  return Math.min(P.alpha * L * Math.log2(1 + s / L), P.seMax * L);
+}
+
+// ---------- stanice ----------
+const PALETTE = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#008080', '#9a6324', '#800000', '#808000', '#000075', '#e6007e', '#2d9cdb'];
+const DEFAULT_SITES = [
+  ['Centar (Šadrvan)', 0, 0, 0], ['Čaršija sjever', -150, 480, 30], ['Jug-centar', -60, -480, 60],
+  ['Zapad-centar', -560, -60, 10], ['Kalaja istok', 640, 170, 90], ['Tržni centar sjever', 380, 780, 20],
+  ['Sjeverozapad 1', -620, 800, 45], ['Zapad 2', -1100, 170, 10], ['Jugozapad', -760, -720, 20],
+  ['Jug 1', 260, -980, 40], ['Istok 1', 1300, 430, 15], ['Sjeveroistok', 1050, 1100, 0],
+  ['Sjeverozapad 2', -1150, 1350, 25], ['Sjever 3', 150, 1550, 50], ['Ulaz u grad (zapad)', -1950, 650, 0],
+  ['Jug 2', -380, -1550, 0], ['Jugoistok (Šar)', 1150, -1000, 0],
+];
+const NET = { stations: [], cells: [], counter: 0, slots: new Array(64).fill(false), version: 0 };
+function allocSlot() { for (let i = 0; i < 64; i++) if (!NET.slots[i]) { NET.slots[i] = true; return i; } return 63; }
+function newStation(name, x, y, az) {
+  NET.counter++;
+  const slot = allocSlot();
+  const st = {
+    id: NET.counter, slot, name: name || ('Nova ' + NET.counter), code: 'S' + String(NET.counter).padStart(2, '0'),
+    x, y, az: az || 0, power: P.txDefault, h: 25, active: true, color: PALETTE[(NET.counter - 1) % PALETTE.length],
+    pl: new Float32Array(NPT), tl: new Float32Array(NPT), ang: new Float32Array(NPT),
+    p: [new Float32Array(NPT), new Float32Array(NPT), new Float32Array(NPT)],
+    dirty: 2,
+  };
+  return st;
+}
+function rebuildCells() {
+  NET.cells = [];
+  NET.stations.forEach((st, si) => {
+    for (let k = 0; k < 3; k++) NET.cells.push({ st, si, k, code: st.code + 'abc'[k] });
+  });
+  NET.version++;
+}
+function addStation(name, x, y, az) { const st = newStation(name, x, y, az); NET.stations.push(st); rebuildCells(); return st; }
+function removeStation(st) {
+  const i = NET.stations.indexOf(st);
+  if (i < 0) return;
+  NET.slots[st.slot] = false; NET.stations.splice(i, 1);
+  rebuildCells();
+  resetServing();
+}
+function resetNetwork() {
+  for (const st of NET.stations) NET.slots[st.slot] = false;
+  NET.stations = []; NET.counter = 0;
+  for (const s of DEFAULT_SITES) addStation(s[0], s[1], s[2], s[3]);
+  rebuildCells();
+  resetServing();
+}
+function resetServing() { for (const u of USERS.list) u.serv = -1; if (USERS.test) { USERS.test.serv = -1; USERS.test.cand = -1; } }
+function markAllDirty() { for (const st of NET.stations) st.dirty = 2; }
+
+// ---------- cache mreže: gubici i snaga po tački ----------
+function ensureStationGrid(st) {
+  if (st.dirty === 0) return false;
+  if (st.dirty >= 2) {
+    const pl = st.pl, tl = st.tl, ang = st.ang;
+    for (let r = 0; r < NG; r++) {
+      const y = -HALF + STEP * (r + 0.5);
+      for (let c = 0; c < NG; c++) {
+        const x = -HALF + STEP * (c + 0.5), i = r * NG + c;
+        pl[i] = plMedian(st, x, y, DENSG[i]); tl[i] = _tl;
+        ang[i] = Math.atan2(x - st.x, y - st.y) * RAD;
+      }
+    }
+  }
+  for (let k = 0; k < 3; k++) {
+    const arr = st.p[k], az = st.az + 120 * k;
+    if (!st.active) { arr.fill(0); continue; }
+    for (let i = 0; i < NPT; i++) arr[i] = Math.pow(10, (st.power + gainAt(st.ang[i], az) - st.pl[i]) / 10);
+  }
+  st.dirty = 0;
+  return true;
+}
+function ensureGrid() { let ch = false; for (const st of NET.stations) if (ensureStationGrid(st)) ch = true; return ch; }
+
+// ---------- korisnici ----------
+const USERS = { list: [], test: null, loads: new Float64Array(256), rho: new Float64Array(256), simT: 0, hoLog: [], hoTimes: [], rlf: 0, hoTotal: 0, pp: 0, nBase: 0 };
+let CDF = null;
+function buildDemandCdf() {
+  CDF = new Float64Array(NPT);
+  let s = 0;
+  for (let r = 0; r < NG; r++) for (let c = 0; c < NG; c++) {
+    s += demand(-HALF + STEP * (c + 0.5), -HALF + STEP * (r + 0.5));
+    CDF[r * NG + c] = s;
+  }
+  for (let i = 0; i < NPT; i++) CDF[i] /= s;
+}
+function sampleDemandPos() {
+  if (!CDF) buildDemandCdf();
+  const u = rand();
+  let lo = 0, hi = NPT - 1;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (CDF[m] < u) lo = m + 1; else hi = m; }
+  const r = (lo / NG) | 0, c = lo % NG;
+  return [-HALF + STEP * (c + rand()), -HALF + STEP * (r + rand())];
+}
+function makeUser(grp) {
+  const u = {
+    grp, x: 0, y: 0, hd: rand() * 2 * Math.PI, cls: 0, spd: 1.4, jit: 0.7 + 0.6 * rand(), turnT: rand() * 20,
+    ax: 0, ay: 0, ar: 150, rnd: rand(), indoor: false,
+    serv: -1, cand: -1, candT: 0, rlfT: 0, lastHo: -1e9, prevCell: -1,
+    sh: new Float32Array(64), rsrp: -140, sinr: -20, thr: 0, rxS: -300, rxB: -300,
+  };
+  for (let i = 0; i < 64; i++) u.sh[i] = randn() * P.shadowSigma;
+  if (grp === 'event') {
+    u.cls = 0; u.ax = EV.x; u.ay = EV.y; u.ar = 1.5 * EV.sigma;
+    u.x = EV.x + randn() * EV.sigma; u.y = EV.y + randn() * EV.sigma;
+  } else {
+    u.cls = rand() < P.vehShare ? 1 : 0;
+    const pos = sampleDemandPos();
+    u.ax = pos[0]; u.ay = pos[1];
+    u.ar = u.cls ? 1500 : 150;
+    u.x = pos[0] + (u.cls ? (rand() - 0.5) * 2500 : randn() * 60);
+    u.y = pos[1] + (u.cls ? (rand() - 0.5) * 2500 : randn() * 60);
+  }
+  clampUser(u);
+  u.indoor = u.cls === 0 && u.rnd < P.indoorShare;
+  return u;
+}
+function clampUser(u) {
+  const L = HALF - 20;
+  if (u.x > L) { u.x = L; u.hd = -u.hd; } else if (u.x < -L) { u.x = -L; u.hd = -u.hd; }
+  if (u.y > L) { u.y = L; u.hd = Math.PI - u.hd; } else if (u.y < -L) { u.y = -L; u.hd = Math.PI - u.hd; }
+}
+function setUserCounts(nBase, nEvent) {
+  const L = USERS.list;
+  const cnt = g => L.reduce((a, u) => a + (u.grp === g ? 1 : 0), 0);
+  for (const [g, target] of [['base', nBase], ['event', nEvent]]) {
+    let n = cnt(g);
+    while (n < target) { L.push(makeUser(g)); n++; }
+    while (n > target) {
+      for (let i = L.length - 1; i >= 0; i--) if (L[i].grp === g) { L.splice(i, 1); break; }
+      n--;
+    }
+  }
+}
+function refreshIndoor() { for (const u of USERS.list) u.indoor = u.cls === 0 && u.rnd < P.indoorShare; if (USERS.test) USERS.test.indoor = false; }
+function respawnEventUsers() {
+  const L = USERS.list;
+  for (const u of L) if (u.grp === 'event') { u.ax = EV.x; u.ay = EV.y; u.ar = 1.5 * EV.sigma; u.x = EV.x + randn() * EV.sigma; u.y = EV.y + randn() * EV.sigma; clampUser(u); u.serv = -1; }
+}
+function moveUser(u, dt) {
+  const ax = u.ax - u.x, ay = u.ay - u.y, da = Math.hypot(ax, ay);
+  if (u.cls === 1) {
+    u.spd = (P.vehKmh / 3.6) * u.jit;
+    u.turnT -= dt;
+    if (u.turnT <= 0) {
+      u.turnT = 8 + rand() * 20;
+      const r = rand();
+      if (da > u.ar) {
+        // vrati se prema sidru po osi (kao da vozi ulicama)
+        u.hd = Math.abs(ax) > Math.abs(ay) ? (ax > 0 ? Math.PI / 2 : -Math.PI / 2) : (ay > 0 ? 0 : Math.PI);
+      } else if (r < 0.3) u.hd += Math.PI / 2; else if (r < 0.6) u.hd -= Math.PI / 2;
+    }
+  } else {
+    u.spd = 1.4 * u.jit;
+    u.hd += randn() * 0.9 * Math.sqrt(Math.min(dt, 4));
+    if (da > u.ar) u.hd = Math.atan2(ax, ay) + randn() * 0.4;
+  }
+  u.x += Math.sin(u.hd) * u.spd * dt;
+  u.y += Math.cos(u.hd) * u.spd * dt;
+  clampUser(u);
+}
+const RX = new Float64Array(256);
+const FAR2 = 4200 * 4200;
+function measureUser(u, moved) {
+  const sig = P.shadowSigma;
+  const rho = Math.exp(-Math.max(moved, 0.01) / 50), q = Math.sqrt(1 - rho * rho) * sig;
+  let c = 0;
+  for (const st of NET.stations) {
+    if (sig > 0) u.sh[st.slot] = rho * u.sh[st.slot] + q * randn(); else u.sh[st.slot] = 0;
+    const dx = u.x - st.x, dy = u.y - st.y;
+    if (!st.active || dx * dx + dy * dy > FAR2) { RX[c] = RX[c + 1] = RX[c + 2] = -300; c += 3; continue; }
+    const pl = plMedian(st, u.x, u.y) + u.sh[st.slot];
+    const ang = Math.atan2(dx, dy) * RAD;
+    for (let k = 0; k < 3; k++) RX[c + k] = st.power + gainAt(ang, st.az + 120 * k) - pl;
+    c += 3;
+  }
+  return c;
+}
+function usersTick(dt, doMove) {
+  const C = NET.cells.length;
+  const t = USERS.simT += dt;
+  const pr = USERS.rho;
+  for (const u of USERS.list) {
+    const ox = u.x, oy = u.y;
+    if (doMove) moveUser(u, dt);
+    processUser(u, dt, Math.hypot(u.x - ox, u.y - oy), t, C, pr, false);
+  }
+  const T = USERS.test;
+  if (T) {
+    // test korisnik: manji koraci (0.1 s) da TTT radi smisleno
+    const n = Math.max(1, Math.round(dt / 0.1)), sdt = dt / n;
+    for (let i = 0; i < n; i++) {
+      const ox = T.x, oy = T.y;
+      if (doMove) moveTest(T, sdt);
+      processUser(T, sdt, Math.hypot(T.x - ox, T.y - oy), t - dt + sdt * (i + 1), C, pr, true);
+    }
+  }
+  // opterećenje
+  const ld = USERS.loads; ld.fill(0);
+  for (const u of USERS.list) if (u.serv >= 0) ld[u.serv]++;
+  if (T && T.serv >= 0) ld[T.serv]++;
+  for (let c = 0; c < C; c++) pr[c] = Math.max(P.rhoMin, Math.min(1, ld[c] / P.actN0));
+  // brzine
+  const fin = u => {
+    if (u.serv < 0) { u.thr = 0; return; }
+    u.thr = seOf(u.sinr) * P.bw * P.dl / Math.max(1, ld[u.serv]) / 1e6;
+  };
+  for (const u of USERS.list) fin(u);
+  if (T) { fin(T); T.hist.push({ t: USERS.simT, rs: T.rxS, rb: T.rxB, thr: T.thr, sinr: T.sinr, serv: T.serv }); if (T.hist.length > 1500) T.hist.splice(0, 300); }
+}
+function moveTest(T, dt) {
+  if (!T.target) return;
+  const dx = T.target.x - T.x, dy = T.target.y - T.y, d = Math.hypot(dx, dy);
+  const step = T.speed * dt;
+  if (d <= step) { T.x = T.target.x; T.y = T.target.y; T.target = null; return; }
+  T.x += dx / d * step; T.y += dy / d * step;
+  T.hd = Math.atan2(dx, dy);
+  T.trail.push([T.x, T.y, T.serv]);
+  if (T.trail.length > 400) T.trail.splice(0, 100);
+}
+function makeTest(x, y) {
+  const T = makeUser('test');
+  T.x = x; T.y = y; T.cls = 1; T.indoor = false; T.speed = 50 / 3.6; T.target = null; T.hist = []; T.trail = []; T.hoCount = 0;
+  return T;
+}
+function logHo(u, t, from, to, rf, rt, isTest) {
+  USERS.hoTotal++;
+  USERS.hoTimes.push(t);
+  const pp = (to === u.prevCell && t - u.lastHo < 10);
+  if (pp) USERS.pp++;
+  u.prevCell = from; u.lastHo = t;
+  if (isTest) {
+    u.hoCount++;
+    USERS.hoLog.push({ t, from, to, rf, rt, pp });
+    if (USERS.hoLog.length > 60) USERS.hoLog.shift();
+  }
+}
+function processUser(u, dt, moved, t, C, rhoArr, isTest) {
+  if (C === 0) { u.serv = -1; return; }
+  measureUser(u, moved);
+  // najjača ćelija i najjača druga
+  let b = 0, bv = -1e9;
+  for (let c = 0; c < C; c++) if (RX[c] > bv) { bv = RX[c]; b = c; }
+  if (bv < -250) { u.serv = -1; u.rsrp = -140; u.sinr = -30; u.rxS = -300; u.rxB = -300; return; }
+  if (u.serv < 0 || u.serv >= C || RX[u.serv] < -250) {
+    if (u.serv >= 0 && u.serv < C && !NET.cells[u.serv].st.active) { USERS.rlf++; }
+    u.serv = b; u.cand = -1; u.candT = 0; u.rlfT = 0;
+  }
+  const s = u.serv;
+  // A3 handover: susjed bolji od serving za histerezu, bar TTT
+  let bn = -1, bnv = -1e9;
+  for (let c = 0; c < C; c++) if (c !== s && RX[c] > bnv) { bnv = RX[c]; bn = c; }
+  u.rxS = RX[s]; u.rxB = bnv;
+  if (isTest) u.rxSnap = Array.from(RX.subarray(0, C));
+  if (bn >= 0 && bnv > RX[s] + P.hyst) {
+    if (u.cand !== bn) { u.cand = bn; u.candT = 0; }
+    u.candT += dt;
+    if (u.candT >= P.ttt) {
+      logHo(u, t, s, bn, RX[s], bnv, isTest);
+      u.serv = bn; u.cand = -1; u.candT = 0; u.rlfT = 0;
+    }
+  } else { u.cand = -1; u.candT = 0; }
+  // SINR serving ćelije
+  const pen = u.indoor ? P.o2i : 0, sv = u.serv;
+  let S = 0, I = 0;
+  for (let c = 0; c < C; c++) {
+    if (RX[c] < -250) continue;
+    const p = Math.pow(10, (RX[c] - pen) / 10);
+    if (c === sv) S = p; else I += rhoArr[c] * p;
+  }
+  u.sinr = 10 * Math.log10(S / (I + P.noiseMw));
+  u.rsrp = RX[sv] - pen - P.rsrpOffset;
+  // prekid veze (RLF): predugo ispod praga
+  if (u.sinr < P.sinrMin) {
+    u.rlfT += dt;
+    if (u.rlfT > 1 && !u.rlfFlag) { USERS.rlf++; u.rlfFlag = true; u.serv = b; u.cand = -1; }
+  } else if (u.sinr >= P.sinrMin + 2) { u.rlfT = 0; u.rlfFlag = false; }
+}
+
+// ---------- mreža (grid): metrike za mapu ----------
+const DENSG = new Float32Array(NPT);
+function buildDensity() { for (let r = 0; r < NG; r++) for (let c = 0; c < NG; c++) DENSG[r * NG + c] = density(-HALF + STEP * (c + 0.5), -HALF + STEP * (r + 0.5)); }
+buildDensity();
+const GM = { srv: new Int16Array(NPT), rsrp: new Float32Array(NPT), sinr: new Float32Array(NPT), thr: new Float32Array(NPT), W: new Float64Array(NPT), Z: new Float32Array(NPT), cells: [] };
+function buildWeights() {
+  let s = 0;
+  for (let r = 0; r < NG; r++) for (let c = 0; c < NG; c++) {
+    const x = -HALF + STEP * (c + 0.5), y = -HALF + STEP * (r + 0.5);
+    let w = demand(x, y);
+    if (EV.count > 0) w += EV.count / 200 * Math.exp(-((x - EV.x) ** 2 + (y - EV.y) ** 2) / (2 * EV.sigma * EV.sigma)) * 0.8;
+    GM.W[r * NG + c] = w; s += w;
+  }
+  for (let i = 0; i < NPT; i++) GM.W[i] /= s;
+}
+function buildElevation() {
+  for (let r = 0; r < NG; r++) for (let c = 0; c < NG; c++) GM.Z[r * NG + c] = DEM.at(-HALF + STEP * (c + 0.5), -HALF + STEP * (r + 0.5));
+}
+function computeMetrics(indoor) {
+  const C = NET.cells.length;
+  const pa = [], idx = [];
+  NET.cells.forEach((cell, c) => { if (cell.st.active) { pa.push(cell.st.p[cell.k]); idx.push(c); } });
+  const ld = USERS.loads, rho = USERS.rho, f = Math.pow(10, -(indoor ? P.o2i : 0) / 10);
+  const n = pa.length, noise = P.noiseMw, off = P.rsrpOffset, pen = indoor ? P.o2i : 0;
+  const R = new Float64Array(n), LD = new Float64Array(n);
+  for (let j = 0; j < n; j++) { R[j] = rho[idx[j]] || P.rhoMin; LD[j] = ld[idx[j]] || 0; }
+  for (let i = 0; i < NPT; i++) {
+    let best = 0, bj = -1, sum = 0;
+    for (let j = 0; j < n; j++) { const p = pa[j][i]; if (p > best) { best = p; bj = j; } sum += R[j] * p; }
+    if (bj < 0) { GM.srv[i] = -1; GM.rsrp[i] = -200; GM.sinr[i] = -50; GM.thr[i] = 0; continue; }
+    const I = (sum - R[bj] * best) * f, S = best * f;
+    const sinr = 10 * Math.log10(S / (I + noise));
+    GM.srv[i] = idx[bj];
+    GM.rsrp[i] = 10 * Math.log10(S) - off;
+    GM.sinr[i] = sinr;
+    GM.thr[i] = seOf(sinr) * P.bw * P.dl / (LD[bj] + 1) / 1e6;
+  }
+}
+function gridStats() {
+  const W = GM.W; let a100 = 0, a110 = 0, u100 = 0, uOk = 0;
+  for (let i = 0; i < NPT; i++) {
+    if (GM.rsrp[i] >= -100) { a100++; u100 += W[i]; }
+    if (GM.rsrp[i] >= -110) a110++;
+    if (GM.thr[i] >= P.target) uOk += W[i];
+  }
+  return { area100: a100 / NPT * 100, area110: a110 / NPT * 100, users100: u100 * 100, usersOk: uOk * 100 };
+}
+function userStats() {
+  const L = USERS.list, n = L.length;
+  const out = { n, mean: 0, med: 0, p5: 0, ok: 0, nosvc: 0 };
+  if (n === 0) return out;
+  const thr = L.map(u => u.thr).sort((a, b) => a - b);
+  out.mean = thr.reduce((a, b) => a + b, 0) / n;
+  out.med = thr[Math.floor(n / 2)];
+  out.p5 = thr[Math.floor(n * 0.05)];
+  out.ok = L.filter(u => u.thr >= P.target).length / n * 100;
+  out.nosvc = L.filter(u => u.serv < 0 || u.sinr < P.sinrMin).length / n * 100;
+  return out;
+}
+function loadStats() {
+  let mx = 0, over = 0, mc = -1;
+  for (let c = 0; c < NET.cells.length; c++) { const l = USERS.loads[c]; if (l > mx) { mx = l; mc = c; } if (l > 20) over++; }
+  return { max: mx, over, maxCell: mc };
+}
+function hoStats() {
+  const t = USERS.simT, T = USERS.hoTimes;
+  while (T.length && T[0] < t - 60) T.shift();
+  const n = USERS.list.length + (USERS.test ? 1 : 0);
+  return { last60: T.length, perUser: n ? T.length / n : 0, ppPct: USERS.hoTotal ? USERS.pp / USERS.hoTotal * 100 : 0, rlf: USERS.rlf, total: USERS.hoTotal };
+}
+function resetHoCounters() { USERS.hoTimes = []; USERS.hoLog = []; USERS.rlf = 0; USERS.hoTotal = 0; USERS.pp = 0; if (USERS.test) USERS.test.hoCount = 0; }
+
+// ---------- sonda: detaljna analiza jedne tačke ----------
+function probeAt(x, y, indoor) {
+  const C = NET.cells.length;
+  if (C === 0) return null;
+  const pen = indoor ? P.o2i : 0, rows = [];
+  const infoBySt = new Map();
+  let c = 0;
+  for (const st of NET.stations) {
+    const pl = plMedian(st, x, y);
+    infoBySt.set(st, { pl, tl: _tl, clut: _clut, p: _p, plLos: _plLos, plN: _plN, d: _d2 });
+    const ang = Math.atan2(x - st.x, y - st.y) * RAD;
+    for (let k = 0; k < 3; k++) { rows.push({ c: c + k, st, k, rx: st.active ? st.power + gainAt(ang, st.az + 120 * k) - pl : -300 }); }
+    c += 3;
+  }
+  rows.sort((a, b) => b.rx - a.rx);
+  const best = rows[0];
+  if (best.rx < -250) return { none: true };
+  const info = infoBySt.get(best.st);
+  let S = 0, I = 0;
+  for (const r of rows) { if (r.rx < -250) continue; const p = Math.pow(10, (r.rx - pen) / 10); if (r === best) S = p; else I += (USERS.rho[r.c] || P.rhoMin) * p; }
+  const sinr = 10 * Math.log10(S / (I + P.noiseMw)), rsrp = best.rx - pen - P.rsrpOffset;
+  const load = USERS.loads[best.c] || 0;
+  const thr = seOf(sinr) * P.bw * P.dl / (load + 1) / 1e6;
+  // najbliža stanica i teren
+  let near = null, nd = 1e9;
+  for (const st of NET.stations) { const d = Math.hypot(x - st.x, y - st.y); if (st.active && d < nd) { nd = d; near = st; } }
+  plMedian(near, x, y); const tlNear = _tl, clutNear = _clut;
+  let cause = 0, text = 'Dobro: dovoljno jak signal, dobar kvalitet i ćelija nije preopterećena.';
+  const weak = thr < P.target || rsrp < -105, cov = rsrp < -100;
+  if (weak) {
+    if (cov) {
+      if (tlNear >= 6) { cause = 2; text = 'Zasjena terenom: brdo između ove tačke i najbliže stanice daje dodatni gubitak od ' + tlNear.toFixed(0) + ' dB.'; }
+      else if (clutNear >= 4 && nd < 900) { cause = 3; text = 'Gusta gradnja: uske ulice i zidovi slabe signal (dodatnih ' + clutNear.toFixed(0) + ' dB).'; }
+      else { cause = 1; text = 'Predaleko od stanice: najbliža aktivna stanica je ' + nd.toFixed(0) + ' m daleko, gubitak na toj udaljenosti je prevelik.'; }
+    } else if (sinr < 5) { cause = 4; text = 'Interferencija: signal susjednih ćelija je skoro jak kao signal serving ćelije (SINR ' + sinr.toFixed(1) + ' dB).'; }
+    else { cause = 5; text = 'Preopterećena ćelija: signal je dobar, ali se kapacitet dijeli na ' + (load + 1).toFixed(0) + ' korisnika.'; }
+  }
+  return {
+    x, y, best, info, top: rows.slice(0, 3), rsrp, sinr, thr, load, cause, text, nd, near,
+    se: seOf(sinr), indoor,
+  };
+}
+
+// ---------- optimizacija: predlog novih stanica (greedy, generator da UI ostane živ) ----------
+function* suggestSitesGen(nNew, nUsers) {
+  ensureGrid();
+  const idx = [];
+  for (let r = 1; r < NG; r += 3) for (let c = 1; c < NG; c += 3) idx.push(r * NG + c);
+  const M = idx.length;
+  const w = new Float64Array(M); let ws = 0;
+  for (let j = 0; j < M; j++) { w[j] = GM.W[idx[j]]; ws += w[j]; }
+  for (let j = 0; j < M; j++) w[j] /= ws;
+  // postojeće ćelije -> najjača, indeks, suma
+  const best0 = new Float64Array(M), bj0 = new Int16Array(M), sum0 = new Float64Array(M);
+  let n = 0;
+  for (const st of NET.stations) if (st.active) for (let k = 0; k < 3; k++) {
+    const a = st.p[k];
+    for (let j = 0; j < M; j++) { const p = a[idx[j]]; if (p > best0[j]) { best0[j] = p; bj0[j] = n; } sum0[j] += p; }
+    n++;
+  }
+  const N = Math.max(100, nUsers || 200), noise = P.noiseMw;
+  const load = new Float64Array(n + 3 * (nNew + 1) + 3);
+  const nb = new Float64Array(M), nbj = new Int16Array(M), ns = new Float64Array(M);
+  const util = (cand, nBase) => {
+    load.fill(0);
+    for (let j = 0; j < M; j++) {
+      let best = best0[j], bj = bj0[j], sum = sum0[j];
+      for (let k = 0; k < 3; k++) { const p = cand[k][j]; sum += p; if (p > best) { best = p; bj = nBase + k; } }
+      nb[j] = best; nbj[j] = bj; ns[j] = sum; load[bj] += w[j] * N;
+    }
+    let u = 0;
+    for (let j = 0; j < M; j++) {
+      const best = nb[j];
+      if (best <= 0) continue;
+      const sinr = 10 * Math.log10(best / (ns[j] - best + noise));
+      u += w[j] * Math.log(seOf(sinr) * P.bw * P.dl / Math.max(1, load[nbj[j]]) / 1e6 + 1);
+    }
+    return u;
+  };
+  const cands = [];
+  for (let x = -2400; x <= 2400; x += 400) for (let y = -2400; y <= 2400; y += 400) {
+    let ok = true;
+    for (const st of NET.stations) if (Math.hypot(x - st.x, y - st.y) < 250) { ok = false; break; }
+    if (ok && DEM.ready && DEM.at(x, y) - DEM.base > 300) ok = false;
+    if (ok) cands.push([x, y]);
+  }
+  const tmp = { x: 0, y: 0, h: 25 }, cp = [];
+  for (let ci = 0; ci < cands.length; ci++) {
+    const [x, y] = cands[ci];
+    tmp.x = x; tmp.y = y;
+    const pl = new Float32Array(M), ang = new Float32Array(M);
+    for (let j = 0; j < M; j++) {
+      const gx = -HALF + STEP * ((idx[j] % NG) + 0.5), gy = -HALF + STEP * (((idx[j] / NG) | 0) + 0.5);
+      pl[j] = plMedian(tmp, gx, gy, DENSG[idx[j]]); ang[j] = Math.atan2(gx - x, gy - y) * RAD;
+    }
+    cp.push({ x, y, pl, ang });
+    if (ci % 4 === 0) yield (ci + 1) / cands.length * 0.8;
+  }
+  const out = [];
+  for (let round = 0; round < nNew; round++) {
+    let best = null;
+    for (const c of cp) {
+      if (out.some(o => Math.hypot(o.x - c.x, o.y - c.y) < 400)) continue;
+      for (const az0 of [0, 60]) {
+        const nc = [];
+        for (let k = 0; k < 3; k++) { const a = new Float32Array(M); for (let j = 0; j < M; j++) a[j] = Math.pow(10, (P.txDefault + gainAt(c.ang[j], az0 + 120 * k) - c.pl[j]) / 10); nc.push(a); }
+        const u = util(nc, n);
+        if (!best || u > best.u) best = { u, x: c.x, y: c.y, az: az0, nc };
+      }
+    }
+    if (!best) break;
+    out.push({ x: best.x, y: best.y, az: best.az });
+    for (let k = 0; k < 3; k++) {
+      const a = best.nc[k];
+      for (let j = 0; j < M; j++) { const p = a[j]; if (p > best0[j]) { best0[j] = p; bj0[j] = n; } sum0[j] += p; }
+      n++;
+    }
+    yield 0.8 + 0.2 * (round + 1) / nNew;
+  }
+  return out;
+}
+function suggestSites(nNew, nUsers) { const g = suggestSitesGen(nNew, nUsers); let r; while (!(r = g.next()).done); return r.value; }
+
+// ---------- uvoz / izvoz stanica ----------
+function exportStations() {
+  return JSON.stringify(NET.stations.map(s => { const ll = xy2ll(s.x, s.y); return { naziv: s.name, lat: +ll.lat.toFixed(6), lon: +ll.lon.toFixed(6), azimut: s.az, snaga_dBm: s.power, visina_m: s.h, aktivna: s.active }; }), null, 1);
+}
+function importStations(json) {
+  const arr = JSON.parse(json);
+  if (!Array.isArray(arr)) throw new Error('Očekivan je niz stanica');
+  for (const st of NET.stations) NET.slots[st.slot] = false;
+  NET.stations = []; NET.counter = 0;
+  for (const a of arr) {
+    const lat = a.lat, lon = a.lon;
+    if (typeof lat !== 'number' || typeof lon !== 'number') throw new Error('Svaka stanica treba lat i lon');
+    const p = ll2xy(lat, lon);
+    const st = addStation(a.naziv || undefined, p.x, p.y, a.azimut || 0);
+    if (typeof a.snaga_dBm === 'number') st.power = a.snaga_dBm;
+    if (typeof a.visina_m === 'number') st.h = a.visina_m;
+    if (a.aktivna === false) st.active = false;
+  }
+  rebuildCells();
+  resetServing();
+}
+
+</script>
+<script>
+// =====================================================================
+//  MAPA (vlastita, na canvasu), CRTANJE, KONTROLE
+// =====================================================================
+const $ = id => document.getElementById(id);
+const BASEMAPS = {
+  sat: { name: 'Satelit (Esri)', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles © Esri — Esri, Maxar, Earthstar Geographics, GIS User Community', max: 19 },
+  carto: { name: 'Svijetla mapa (CARTO)', url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', attr: '© OpenStreetMap contributors © CARTO', max: 20 },
+  none: { name: 'Bez podloge', url: null, attr: '', max: 19 },
+};
+const S = {
+  mode: 'pan', layer: 'rsrp', opacity: 0.65, indoorView: false, showSectors: true, showUsers: true, showLinks: false, userColor: 'thr',
+  basemap: 'sat', running: true, timeScale: 5, selected: null, suggestions: [], probe: null, hover: null,
+  view: { lat: ORIGIN.lat, lon: ORIGIN.lon, zoom: 14 },
+  gridDirty: true, metricsDirty: true, paintDirty: true, raf: false, tileErr: 0, tileOk: 0, lastGrid: 0, lastMetrics: 0,
+};
+const V = { cwx: 0, cwy: 0, ox: 0, oy: 0, k: 1 };
+const cv = $('map'), ctx = cv.getContext('2d');
+let W = 800, H = 600, DPR = 1;
+const heatCv = document.createElement('canvas'); heatCv.width = NG; heatCv.height = NG;
+const heatCtx = heatCv.getContext('2d');
+let heatSmooth = true, heatReady = false;
+
+// ---------- projekcije ----------
+const worldX = (lon, z) => (lon + 180) / 360 * 256 * Math.pow(2, z);
+const worldY = (lat, z) => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * 256 * Math.pow(2, z); };
+const lonFromWX = (wx, z) => wx / (256 * Math.pow(2, z)) * 360 - 180;
+const latFromWY = (wy, z) => { const n = Math.PI - 2 * Math.PI * wy / (256 * Math.pow(2, z)); return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))); };
+function viewCalc() {
+  const z = S.view.zoom;
+  V.cwx = worldX(S.view.lon, z); V.cwy = worldY(S.view.lat, z);
+  V.ox = worldX(ORIGIN.lon, z) - V.cwx + W / 2; V.oy = worldY(ORIGIN.lat, z) - V.cwy + H / 2;
+  V.k = 256 * Math.pow(2, z) / (40075016.686 * Math.cos(ORIGIN.lat * Math.PI / 180));
+}
+const m2s = (x, y) => [V.ox + x * V.k, V.oy - y * V.k];
+const s2m = (sx, sy) => [(sx - V.ox) / V.k, (V.oy - sy) / V.k];
+
+// ---------- crtanje ----------
+function requestDraw() { if (!S.raf) { S.raf = true; requestAnimationFrame(frame); } }
+function frame(now) {
+  S.raf = false;
+  if (S.gridDirty) {
+    if (now - S.lastGrid > 40) { ensureGrid(); S.gridDirty = false; S.metricsDirty = true; S.lastGrid = now; }
+    else requestDraw();
+  }
+  if (S.metricsDirty && !S.gridDirty) { computeMetrics(S.indoorView); S.metricsDirty = false; S.paintDirty = true; }
+  if (S.paintDirty && !S.gridDirty) { paintHeat(); S.paintDirty = false; }
+  draw();
+}
+function resize() {
+  const r = cv.parentElement.getBoundingClientRect();
+  DPR = window.devicePixelRatio || 1; W = r.width; H = r.height;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  requestDraw();
+}
+const tileCache = new Map();
+function getTile(url) {
+  let t = tileCache.get(url);
+  if (t) return t;
+  t = { img: new Image(), ok: false, err: false };
+  t.img.onload = () => { t.ok = true; S.tileOk++; requestDraw(); };
+  t.img.onerror = () => { t.err = true; S.tileErr++; if (S.tileErr === 6 && S.tileOk === 0) toast('Podloga se ne učitava. Provjeri internet ili izaberi drugu podlogu (lijevo, „Podloga“).'); };
+  t.img.src = url;
+  tileCache.set(url, t);
+  if (tileCache.size > 500) { const k = tileCache.keys().next().value; tileCache.delete(k); }
+  return t;
+}
+function drawTiles() {
+  ctx.fillStyle = '#e6ebf0';
+  ctx.fillRect(0, 0, W, H);
+  const bm = BASEMAPS[S.basemap];
+  if (!bm.url) return;
+  const z = S.view.zoom, tz = Math.max(0, Math.min(bm.max, Math.round(z))), sc = Math.pow(2, z - tz), n = Math.pow(2, tz);
+  const cx = worldX(S.view.lon, tz), cy = worldY(S.view.lat, tz), hw = W / 2 / sc, hh = H / 2 / sc;
+  const x0 = Math.floor((cx - hw) / 256), x1 = Math.floor((cx + hw) / 256), y0 = Math.floor((cy - hh) / 256), y1 = Math.floor((cy + hh) / 256);
+  for (let ty = y0; ty <= y1; ty++) {
+    if (ty < 0 || ty >= n) continue;
+    for (let tx = x0; tx <= x1; tx++) {
+      const txw = ((tx % n) + n) % n;
+      const url = bm.url.replace('{s}', 'abcd'[(txw + ty) % 4]).replace('{z}', tz).replace('{x}', txw).replace('{y}', ty);
+      const t = getTile(url);
+      if (!t.ok) continue;
+      ctx.drawImage(t.img, (tx * 256 - cx) * sc + W / 2, (ty * 256 - cy) * sc + H / 2, 256 * sc + 0.6, 256 * sc + 0.6);
+    }
+  }
+}
+function drawSector(st, k, alpha) {
+  const [sx, sy] = m2s(st.x, st.y);
+  const R = Math.max(16, 230 * V.k), a0 = (st.az + 120 * k - 32.5 - 90) / RAD, a1 = (st.az + 120 * k + 32.5 - 90) / RAD;
+  ctx.beginPath(); ctx.moveTo(sx, sy); ctx.arc(sx, sy, R, a0, a1); ctx.closePath();
+  ctx.fillStyle = hexA(st.color, alpha); ctx.fill();
+  ctx.strokeStyle = hexA(st.color, Math.min(1, alpha * 3.5)); ctx.lineWidth = 1; ctx.stroke();
+}
+function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+function thrColor(t, serv) {
+  if (serv < 0) return '#444';
+  if (t < 5) return '#d73027';
+  if (t < 25) return '#fc8d59';
+  if (t < 100) return '#e8d44d';
+  return '#1a9850';
+}
+function drawStar(x, y, r, fill, stroke) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * 0.45 : r, a = -Math.PI / 2 + i * Math.PI / 5; ctx.lineTo(x + rr * Math.cos(a), y + rr * Math.sin(a)); }
+  ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
+}
+function draw() {
+  viewCalc();
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawTiles();
+  // sloj (heatmap)
+  if (S.layer !== 'none' && heatReady) {
+    const [x0, y0] = m2s(-HALF, HALF), size = 2 * HALF * V.k;
+    ctx.save(); ctx.globalAlpha = S.opacity; ctx.imageSmoothingEnabled = heatSmooth; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(heatCv, x0, y0, size, size); ctx.restore();
+  }
+  { const [x0, y0] = m2s(-HALF, HALF), size = 2 * HALF * V.k; ctx.save(); ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1; ctx.strokeRect(x0, y0, size, size); ctx.restore(); }
+  const sts = NET.stations;
+  // sektori
+  if (S.showSectors) for (const st of sts) for (let k = 0; k < 3; k++) drawSector(st, k, st.active ? 0.16 : 0.05);
+  // korisnici
+  const T = USERS.test;
+  if (S.showUsers) {
+    const rr = Math.max(2, Math.min(5, V.k * 5));
+    for (const u of USERS.list) {
+      const [sx, sy] = m2s(u.x, u.y);
+      if (sx < -10 || sy < -10 || sx > W + 10 || sy > H + 10) continue;
+      if (S.showLinks && u.serv >= 0) { const st = NET.cells[u.serv].st, [px, py] = m2s(st.x, st.y); ctx.strokeStyle = hexA(st.color, 0.35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(px, py); ctx.stroke(); }
+      ctx.fillStyle = S.userColor === 'cell' && u.serv >= 0 ? NET.cells[u.serv].st.color : thrColor(u.thr, u.serv);
+      ctx.beginPath(); ctx.arc(sx, sy, rr, 0, 6.2832); ctx.fill();
+      ctx.lineWidth = 0.8; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.stroke();
+    }
+  }
+  // događaj
+  if (EV.count > 0 || S.mode === 'event') {
+    const [ex, ey] = m2s(EV.x, EV.y), er = Math.max(10, 2 * EV.sigma * V.k);
+    ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = '#8e24aa'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(ex, ey, er, 0, 6.2832); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = '#8e24aa'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('FESTIVAL', ex, ey - er - 5);
+  }
+  // test korisnik: staza, veze
+  if (T) {
+    if (T.trail.length > 1) {
+      ctx.lineWidth = 3; ctx.lineCap = 'round';
+      for (let i = 1; i < T.trail.length; i++) {
+        const a = T.trail[i - 1], b = T.trail[i], sv = b[2];
+        const [x1, y1] = m2s(a[0], a[1]), [x2, y2] = m2s(b[0], b[1]);
+        ctx.strokeStyle = sv >= 0 && sv < NET.cells.length ? NET.cells[sv].st.color : '#888';
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      }
+    }
+    const [tx, ty] = m2s(T.x, T.y);
+    if (T.serv >= 0 && T.serv < NET.cells.length) {
+      const st = NET.cells[T.serv].st, [px, py] = m2s(st.x, st.y);
+      ctx.strokeStyle = hexA(st.color, 0.95); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(px, py); ctx.stroke();
+      if (T.cand >= 0 && T.cand < NET.cells.length) {
+        const sc2 = NET.cells[T.cand].st, [qx, qy] = m2s(sc2.x, sc2.y);
+        ctx.save(); ctx.setLineDash([5, 5]); ctx.strokeStyle = hexA(sc2.color, 0.9); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(qx, qy); ctx.stroke(); ctx.restore();
+      }
+    }
+    if (T.target) { const [gx, gy] = m2s(T.target.x, T.target.y); ctx.strokeStyle = '#1f6feb'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(gx, gy, 9, 0, 6.2832); ctx.moveTo(gx - 14, gy); ctx.lineTo(gx + 14, gy); ctx.moveTo(gx, gy - 14); ctx.lineTo(gx, gy + 14); ctx.stroke(); }
+    drawStar(tx, ty, 13, '#1f6feb', '#fff');
+  }
+  // stanice
+  for (const st of sts) {
+    const [sx, sy] = m2s(st.x, st.y);
+    if (sx < -30 || sy < -30 || sx > W + 30 || sy > H + 30) continue;
+    const sel = st === S.selected;
+    ctx.beginPath(); ctx.moveTo(sx, sy - 11); ctx.lineTo(sx + 10, sy + 8); ctx.lineTo(sx - 10, sy + 8); ctx.closePath();
+    ctx.fillStyle = st.active ? '#fff' : '#9aa3ad'; ctx.fill();
+    ctx.lineWidth = sel ? 3.5 : 2; ctx.strokeStyle = sel ? '#d6006e' : (st.active ? '#111' : '#666'); ctx.stroke();
+    ctx.fillStyle = st.color; ctx.beginPath(); ctx.arc(sx, sy + 2, 3, 0, 6.2832); ctx.fill();
+    if (!st.active) { ctx.strokeStyle = '#d00'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(sx - 9, sy - 8); ctx.lineTo(sx + 9, sy + 10); ctx.moveTo(sx + 9, sy - 8); ctx.lineTo(sx - 9, sy + 10); ctx.stroke(); }
+    if (V.k > 0.07 || sel) {
+      ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.95)';
+      ctx.strokeText(st.code, sx, sy + 21); ctx.fillStyle = '#111'; ctx.fillText(st.code, sx, sy + 21);
+    }
+  }
+  // predložene stanice
+  for (const sg of S.suggestions) {
+    const [sx, sy] = m2s(sg.x, sg.y);
+    ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = '#d6006e'; ctx.lineWidth = 2.5; ctx.fillStyle = 'rgba(255,212,0,.9)';
+    ctx.beginPath(); ctx.arc(sx, sy, 15, 0, 6.2832); ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = '#7a0040'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('NOVA', sx, sy + 4);
+  }
+  // sonda
+  if (S.probe) {
+    const [px, py] = m2s(S.probe.x, S.probe.y);
+    ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, py, 8, 0, 6.2832); ctx.moveTo(px - 14, py); ctx.lineTo(px + 14, py); ctx.moveTo(px, py - 14); ctx.lineTo(px, py + 14); ctx.stroke();
+    if (S.probe.best) { const st = S.probe.best.st, [qx, qy] = m2s(st.x, st.y); ctx.save(); ctx.setLineDash([6, 5]); ctx.strokeStyle = hexA(st.color, 0.9); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(qx, qy); ctx.stroke(); ctx.restore(); }
+  }
+  // hover naziv
+  if (S.hover) {
+    const st = S.hover, [sx, sy] = m2s(st.x, st.y), txt = 'Antena ' + st.code + ' · ' + st.name;
+    ctx.font = '12px sans-serif'; const w = ctx.measureText(txt).width + 12;
+    ctx.fillStyle = 'rgba(20,24,30,.92)'; ctx.fillRect(sx + 14, sy - 30, w, 20); ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(txt, sx + 20, sy - 16);
+  }
+  // razmjer
+  { const targets = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000]; let m = 100; for (const t of targets) if (t * V.k > 70) { m = t; break; }
+    const w = m * V.k, x = 12, y = H - 14; ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y - 5); ctx.stroke();
+    ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.9)'; const lab = m >= 1000 ? (m / 1000) + ' km' : m + ' m'; ctx.strokeText(lab, x + 4, y - 7); ctx.fillStyle = '#111'; ctx.fillText(lab, x + 4, y - 7); }
+}
+
+// ---------- boje slojeva ----------
+const RSRP_STOPS = [[-125, [178, 24, 43]], [-110, [239, 138, 98]], [-100, [253, 219, 127]], [-90, [166, 217, 106]], [-80, [26, 150, 65]]];
+const SINR_STOPS = [[-5, [178, 24, 43]], [5, [253, 174, 97]], [12, [255, 255, 140]], [20, [166, 217, 106]], [28, [0, 104, 55]]];
+const THR_STOPS = [[0, [68, 1, 84]], [25, [59, 82, 139]], [75, [33, 145, 140]], [200, [94, 201, 98]], [500, [253, 231, 37]]];
+const CAUSES = [['Dobro (bez problema)', [223, 232, 223]], ['Predaleko od stanice', [215, 48, 39]], ['Zasjena terenom (brdo)', [123, 50, 148]], ['Gusta gradnja', [252, 141, 89]], ['Interferencija (preklapanje ćelija)', [69, 117, 180]], ['Preopterećena ćelija', [230, 184, 0]]];
+function grad(stops, v) {
+  if (v <= stops[0][0]) return stops[0][1];
+  for (let i = 1; i < stops.length; i++) if (v <= stops[i][0]) {
+    const a = stops[i - 1], b = stops[i], t = (v - a[0]) / (b[0] - a[0]);
+    return [a[1][0] + (b[1][0] - a[1][0]) * t, a[1][1] + (b[1][1] - a[1][1]) * t, a[1][2] + (b[1][2] - a[1][2]) * t];
+  }
+  return stops[stops.length - 1][1];
+}
+function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+function paintHeat() {
+  const id = heatCtx.createImageData(NG, NG), d = id.data, lay = S.layer;
+  heatSmooth = !(lay === 'cells' || lay === 'diag');
+  let near = null;
+  if (lay === 'diag') {
+    near = new Int16Array(NPT);
+    const sts = NET.stations;
+    for (let r = 0; r < NG; r++) for (let c = 0; c < NG; c++) {
+      const x = -HALF + STEP * (c + 0.5), y = -HALF + STEP * (r + 0.5); let bd = 1e18, bi = -1;
+      for (let s = 0; s < sts.length; s++) { if (!sts[s].active) continue; const dd = (x - sts[s].x) ** 2 + (y - sts[s].y) ** 2; if (dd < bd) { bd = dd; bi = s; } }
+      near[r * NG + c] = bi;
+    }
+  }
+  let zmin = 1e9, zmax = -1e9;
+  if (lay === 'elev' && DEM.ready) for (let i = 0; i < NPT; i++) { const z = GM.Z[i]; if (z < zmin) zmin = z; if (z > zmax) zmax = z; }
+  for (let r = 0; r < NG; r++) for (let c = 0; c < NG; c++) {
+    const i = r * NG + c, o = ((NG - 1 - r) * NG + c) * 4;
+    let col = null, a = 255;
+    if (lay === 'rsrp') col = grad(RSRP_STOPS, GM.rsrp[i]);
+    else if (lay === 'sinr') col = grad(SINR_STOPS, GM.sinr[i]);
+    else if (lay === 'thr') col = grad(THR_STOPS, GM.thr[i]);
+    else if (lay === 'cells') {
+      const cc = GM.srv[i];
+      if (cc < 0) { a = 0; col = [0, 0, 0]; }
+      else { const cell = NET.cells[cc]; col = hexRgb(cell.st.color); const f = [1, 0.72, 1.18][cell.k]; col = [Math.min(255, col[0] * f + (cell.k === 1 ? 40 : 0)), Math.min(255, col[1] * f + (cell.k === 1 ? 40 : 0)), Math.min(255, col[2] * f + (cell.k === 1 ? 40 : 0))]; }
+    } else if (lay === 'diag') {
+      const rsrp = GM.rsrp[i], sinr = GM.sinr[i], thr = GM.thr[i], ni = near[i];
+      let cause = 0;
+      if (ni < 0) cause = 1;
+      else if (thr < P.target || rsrp < -105) {
+        if (rsrp < -100) {
+          const tl = NET.stations[ni].tl[i], clut = P.clutterMax * DENSG[i], dist = Math.hypot(-HALF + STEP * (c + 0.5) - NET.stations[ni].x, -HALF + STEP * (r + 0.5) - NET.stations[ni].y);
+          cause = tl >= 6 ? 2 : (clut >= 4 && dist < 900 ? 3 : 1);
+        } else cause = sinr < 5 ? 4 : 5;
+      }
+      col = CAUSES[cause][1];
+    } else if (lay === 'elev') {
+      if (!DEM.ready) col = [200, 200, 200];
+      else {
+        const z = GM.Z[i], t = (z - zmin) / Math.max(1, zmax - zmin);
+        col = grad([[0, [120, 170, 100]], [0.25, [200, 210, 130]], [0.55, [190, 150, 100]], [1, [250, 250, 250]]], t);
+        const zl = GM.Z[r * NG + Math.max(0, c - 1)], zr = GM.Z[r * NG + Math.min(NG - 1, c + 1)], zd = GM.Z[Math.max(0, r - 1) * NG + c], zu = GM.Z[Math.min(NG - 1, r + 1) * NG + c];
+        const sh = Math.max(0.55, Math.min(1.35, 1 + ((zl - zr) + (zu - zd)) / (STEP * 2) * 0.9));
+        col = [col[0] * sh, col[1] * sh, col[2] * sh];
+      }
+    } else { a = 0; col = [0, 0, 0]; }
+    d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = a;
+  }
+  heatCtx.putImageData(id, 0, 0);
+  heatReady = true;
+  updateLegend();
+}
+// ---------- interakcija mišem ----------
+const PTR = { down: false, id: 0, sx: 0, sy: 0, moved: false, type: null, st: null, v0: null };
+function hitStation(sx, sy) {
+  let best = null, bd = 16;
+  for (const st of NET.stations) { const [px, py] = m2s(st.x, st.y); const d = Math.hypot(px - sx, py - sy + 2); if (d < bd) { bd = d; best = st; } }
+  return best;
+}
+function hitTest(sx, sy) {
+  const T = USERS.test;
+  if (T) { const [tx, ty] = m2s(T.x, T.y); if (Math.hypot(tx - sx, ty - sy) < 16) return { type: 'T' }; }
+  const st = hitStation(sx, sy);
+  if (st) return { type: 'S', st };
+  return null;
+}
+cv.addEventListener('pointerdown', e => {
+  const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  cv.setPointerCapture(e.pointerId);
+  PTR.down = true; PTR.sx = sx; PTR.sy = sy; PTR.moved = false; PTR.type = 'pan'; PTR.st = null;
+  PTR.v0 = { lat: S.view.lat, lon: S.view.lon };
+  if (S.mode === 'pan') { const h = hitTest(sx, sy); if (h) { PTR.type = h.type; PTR.st = h.st || null; } }
+});
+cv.addEventListener('pointermove', e => {
+  const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  if (!PTR.down) {
+    const h = S.mode === 'pan' ? hitTest(sx, sy) : null;
+    const hv = h && h.type === 'S' ? h.st : null;
+    if (hv !== S.hover) { S.hover = hv; requestDraw(); }
+    cv.style.cursor = h ? 'pointer' : (S.mode === 'pan' ? 'grab' : 'crosshair');
+    return;
+  }
+  const dx = sx - PTR.sx, dy = sy - PTR.sy;
+  if (!PTR.moved && Math.hypot(dx, dy) < 4) return;
+  PTR.moved = true;
+  if (PTR.type === 'pan') {
+    const z = S.view.zoom;
+    S.view.lon = lonFromWX(worldX(PTR.v0.lon, z) - dx, z); S.view.lat = latFromWY(worldY(PTR.v0.lat, z) - dy, z);
+  } else if (PTR.type === 'S') {
+    viewCalc(); const [x, y] = s2m(sx, sy); PTR.st.x = x; PTR.st.y = y; PTR.st.dirty = 2; S.gridDirty = true;
+    if (S.selected !== PTR.st) selectStation(PTR.st);
+  } else if (PTR.type === 'T') {
+    viewCalc(); const [x, y] = s2m(sx, sy); USERS.test.x = Math.max(-HALF + 20, Math.min(HALF - 20, x)); USERS.test.y = Math.max(-HALF + 20, Math.min(HALF - 20, y)); USERS.test.target = null; USERS.test.trail = [];
+  }
+  requestDraw();
+});
+cv.addEventListener('pointerup', e => {
+  const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  const wasDown = PTR.down; PTR.down = false;
+  if (!wasDown) return;
+  if (PTR.moved) { if (PTR.type === 'S') S.gridDirty = true; return; }
+  viewCalc(); const [x, y] = s2m(sx, sy);
+  if (S.mode === 'pan') { if (PTR.type === 'S') selectStation(PTR.st); else if (PTR.type === 'pan') selectStation(null); }
+  else if (S.mode === 'add') {
+    if (NET.stations.length >= 60) { toast('Maksimalno 60 antena.'); return; }
+    const st = addStation(undefined, x, y, 0); selectStation(st); S.gridDirty = true; toast('Dodana nova antena ' + st.code + '. Povuci je gdje treba, ili je okreni lijevo u panelu.');
+  } else if (S.mode === 'probe') { doProbe(x, y); }
+  requestDraw();
+});
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  zoomAt(sx, sy, S.view.zoom - Math.sign(e.deltaY) * 0.5);
+}, { passive: false });
+cv.addEventListener('dblclick', e => { const r = cv.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, S.view.zoom + 1); });
+function zoomAt(sx, sy, nz) {
+  nz = Math.max(11, Math.min(19, nz));
+  const z = S.view.zoom, wx = worldX(S.view.lon, z) + (sx - W / 2), wy = worldY(S.view.lat, z) + (sy - H / 2);
+  const lon = lonFromWX(wx, z), lat = latFromWY(wy, z);
+  S.view.zoom = nz;
+  S.view.lon = lonFromWX(worldX(lon, nz) - (sx - W / 2), nz); S.view.lat = latFromWY(worldY(lat, nz) - (sy - H / 2), nz);
+  requestDraw();
+}
+$('zin').onclick = () => zoomAt(W / 2, H / 2, S.view.zoom + 1);
+$('zout').onclick = () => zoomAt(W / 2, H / 2, S.view.zoom - 1);
+
+
+// ---------- legenda (običan jezik) ----------
+function updateLegend() {
+  const L = $('legend'), lay = S.layer;
+  const gradBar = (stops, labels, title, foot) => {
+    const css = stops.map((s, i) => 'rgb(' + s[1].map(Math.round).join(',') + ') ' + (i / (stops.length - 1) * 100) + '%').join(',');
+    return '<div class="t">' + title + '</div><div class="bar" style="background:linear-gradient(to right,' + css + ')"></div><div class="lab">' + labels.map(l => '<span>' + l + '</span>').join('') + '</div><div style="color:#666;margin-top:4px;font-size:12px">' + foot + '</div>';
+  };
+  const sw = (arr, title) => '<div class="t">' + title + '</div>' + arr.map(a => '<div class="sw"><i style="background:rgb(' + a[1].join(',') + ')"></i>' + a[0] + '</div>').join('');
+  if (lay === 'rsrp') L.innerHTML = gradBar(RSRP_STOPS, ['nema', 'slab', 'srednji', 'dobar', 'jak'], 'Koliko je jak signal?', 'Što dalje od antene, to je signal slabiji.');
+  else if (lay === 'thr') L.innerHTML = gradBar(THR_STOPS, ['0', '25', '75', '200', '500+'], 'Brzina interneta (Mbps)', 'Za film u 4K treba oko 25 Mbps.');
+  else if (lay === 'diag') L.innerHTML = sw([['Sve je u redu', CAUSES[0][1]], ['Predaleko od antene', CAUSES[1][1]], ['Brdo blokira signal', CAUSES[2][1]], ['Gusta gradnja', CAUSES[3][1]], ['Smetnje od susjednih antena', CAUSES[4][1]], ['Previše ljudi na anteni', CAUSES[5][1]]], 'Zašto je negdje slabo?');
+  else L.innerHTML = '';
+}
+
+// ---------- alati ----------
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('#toolbar [data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  $('addMode').classList.toggle('pri', m === 'add');
+  cv.style.cursor = m === 'pan' ? 'grab' : 'crosshair';
+  const hints = { add: 'Klikni bilo gdje na mapi da dodaš novu antenu.', probe: 'Klikni na bilo koje mjesto: objasnit ću ti zašto je tamo signal dobar ili slab.' };
+  if (hints[m]) toast(hints[m]);
+  requestDraw();
+}
+document.querySelectorAll('#toolbar [data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+$('addMode').onclick = () => setMode(S.mode === 'add' ? 'pan' : 'add');
+let toastT = null;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 4200); }
+
+// ---------- izabrana antena ----------
+function selectStation(st) {
+  S.selected = st;
+  $('selBox').style.display = st ? 'block' : 'none';
+  $('selHint').style.display = st ? 'none' : 'block';
+  if (st) {
+    $('selName').textContent = 'Antena ' + st.code + ' - ' + st.name;
+    $('sPower').value = st.power; $('sPowerV').textContent = st.power;
+    const a = ((st.az % 120) + 120) % 120; $('sAz').value = a; $('sAzV').textContent = Math.round(a) + '°';
+    $('sActive').checked = st.active;
+  }
+  requestDraw();
+}
+$('sPower').oninput = e => { const st = S.selected; if (!st) return; st.power = +e.target.value; $('sPowerV').textContent = st.power; st.dirty = Math.max(st.dirty, 1); S.gridDirty = true; requestDraw(); };
+$('sAz').oninput = e => { const st = S.selected; if (!st) return; st.az = +e.target.value; $('sAzV').textContent = st.az + '°'; st.dirty = Math.max(st.dirty, 1); S.gridDirty = true; requestDraw(); };
+$('sActive').onchange = e => { const st = S.selected; if (!st) return; st.active = e.target.checked; st.dirty = Math.max(st.dirty, 1); S.gridDirty = true; toast(st.active ? 'Antena ponovo radi.' : 'Antena je isključena (kvar). Pogledaj kako se pokrivenost i brzina pogoršaju.'); requestDraw(); };
+$('sDel').onclick = () => { if (S.selected) { removeStation(S.selected); selectStation(null); S.gridDirty = true; S.metricsDirty = true; requestDraw(); } };
+
+// ---------- kontrole ----------
+const BM = $('basemap'); for (const k in BASEMAPS) BM.add(new Option(BASEMAPS[k].name, k)); BM.value = S.basemap;
+BM.onchange = () => { S.basemap = BM.value; $('attr').textContent = BASEMAPS[S.basemap].attr; S.tileErr = 0; requestDraw(); };
+$('attr').textContent = BASEMAPS[S.basemap].attr;
+function setLayer(l) { S.layer = l; document.querySelectorAll('#layerBtns button').forEach(b => b.classList.toggle('on', b.dataset.layer === l)); S.paintDirty = true; updateLegend(); requestDraw(); }
+document.querySelectorAll('#layerBtns button').forEach(b => b.onclick = () => setLayer(b.dataset.layer));
+function bindRange(id, fmt, fn) { const el = $(id), out = $(id + 'V'); const f = () => { if (out) out.textContent = fmt(+el.value); fn(+el.value); }; el.addEventListener('input', f); f(); }
+bindRange('opacity', v => v + '%', v => { S.opacity = v / 100; requestDraw(); });
+$('users').onchange = e => { S.showUsers = e.target.checked; requestDraw(); };
+
+const BAND_TEXT = {
+  '0.7': 'Niska frekvencija: signal dolazi daleko i prolazi kroz zidove, ali internet je sporiji.',
+  '3.5': 'Srednja frekvencija: dobar odnos brzine i dometa. Ovo koristi većina 5G mreža.',
+  '26': 'Visoka frekvencija: ogromna brzina, ali signal dopire samo nekoliko stotina metara i ne prolazi kroz zidove. Treba mnogo antena.',
+};
+function setBand(key, quiet) {
+  applyBand(key);
+  for (const st of NET.stations) st.power = P.txDefault;
+  if (S.selected) selectStation(S.selected);
+  document.querySelectorAll('#bandBtns button').forEach(b => b.classList.toggle('on', b.dataset.band === key));
+  $('bandNote').textContent = BAND_TEXT[key];
+  markAllDirty(); S.gridDirty = true; requestDraw();
+}
+document.querySelectorAll('#bandBtns button').forEach(b => b.onclick = () => { setBand(b.dataset.band); });
+$('bandNote').textContent = BAND_TEXT['3.5'];
+
+let curScen = 'vecer';
+const SCEN = { noc: [15, 0, 85, 'Noć: skoro niko nije na mreži.'], dan: [80, 0, 55, 'Radni dan.'], vecer: [200, 0, 60, 'Večernji vrhunac: najviše ljudi koristi internet.'], festival: [200, 450, 35, 'Festival u centru: velika gužva. Pogledaj koje su antene prepune.'] };
+function setScen(key, quiet) {
+  curScen = key; const sc = SCEN[key];
+  document.querySelectorAll('#scenBtns button').forEach(b => b.classList.toggle('on', b.dataset.scen === key));
+  $('nusers').value = sc[0]; $('nusersV').textContent = sc[0];
+  P.indoorShare = sc[2] / 100; refreshIndoor();
+  USERS.nEvent = sc[1]; EV.count = sc[1]; EV.x = 0; EV.y = 0; respawnEventUsers();
+  USERS.nBase = sc[0]; setUserCounts(sc[0], sc[1]); buildWeights();
+  S.metricsDirty = true; requestDraw();
+  if (!quiet) toast(sc[3]);
+}
+document.querySelectorAll('#scenBtns button').forEach(b => b.onclick = () => setScen(b.dataset.scen));
+bindRange('nusers', v => v, v => { if (v === USERS.nBase) return; USERS.nBase = v; setUserCounts(v, USERS.nEvent || 0); S.metricsDirty = true; requestDraw(); });
+$('resetNet').onclick = () => { resetNetwork(); selectStation(null); S.suggestions = []; updateSugButtons(); setBand('3.5'); S.gridDirty = true; S.metricsDirty = true; requestDraw(); };
+$('sidebtn').onclick = () => { $('side').classList.toggle('hidden'); setTimeout(resize, 30); };
+$('fsBtn').onclick = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => { }); else document.exitFullscreen(); };
+
+// ---------- predlog novih antena ----------
+function updateSugButtons() { const has = S.suggestions.length > 0; $('addSug').style.display = has ? '' : 'none'; $('discardSug').style.display = has ? '' : 'none'; }
+function runSuggest(done) {
+  $('spin').classList.add('show'); $('spin').textContent = 'Tražim najbolja mjesta… 0%';
+  ensureGrid(); computeMetrics(false);
+  const g = suggestSitesGen(3, Math.max(100, USERS.list.length));
+  const step = () => {
+    const t0 = performance.now(); let r;
+    do { r = g.next(); } while (!r.done && performance.now() - t0 < 30);
+    if (r.done) { $('spin').classList.remove('show'); done(r.value); }
+    else { $('spin').textContent = 'Tražim najbolja mjesta… ' + Math.round(r.value * 100) + '%'; setTimeout(step, 0); }
+  };
+  setTimeout(step, 20);
+}
+$('suggest').onclick = () => {
+  if (NET.stations.length === 0) { toast('Prvo dodaj bar jednu antenu.'); return; }
+  runSuggest(list => { S.suggestions = list; updateSugButtons(); requestDraw(); toast('Žuti krugovi su najbolja mjesta za nove antene. Klikni „Dodaj predložene“.'); });
+};
+$('addSug').onclick = () => { for (const sg of S.suggestions) addStation('Nova antena', sg.x, sg.y, sg.az); S.suggestions = []; updateSugButtons(); S.gridDirty = true; S.metricsDirty = true; requestDraw(); toast('Dodane 3 nove antene. Pogledaj kako se ocjena mreže promijenila (desno).'); };
+$('discardSug').onclick = () => { S.suggestions = []; updateSugButtons(); requestDraw(); };
+
+// ---------- „Zašto je tu slabo?“ ----------
+function sigWord(r) { return r > -85 ? ['Jak', 'good'] : r > -100 ? ['Srednji', 'warn'] : r > -110 ? ['Slab', 'bad'] : ['Skoro nema', 'bad']; }
+const WHY = {
+  0: ['Ovdje je sve u redu.', 'Signal je dovoljno jak, nema velikih smetnji i antena nije prepuna.'],
+  1: ['Predaleko od antene.', 'Signal slabi što si dalje od antene. Rješenje: dodati antenu bliže ovom mjestu.'],
+  2: ['Brdo je na putu.', 'Brdo između ovog mjesta i najbliže antene blokira signal kao zid. Rješenje: antena sa druge strane brda ili na brdu.'],
+  3: ['Gusta gradnja.', 'Uske ulice i debeli zidovi slabe signal. Rješenje: više manjih antena u gustom dijelu grada.'],
+  4: ['Smetnje od susjednih antena.', 'Signal susjednih antena je skoro jak kao signal tvoje antene pa se miješaju. Rješenje: okrenuti antene ili im smanjiti jačinu.'],
+  5: ['Previše ljudi na jednoj anteni.', 'Signal je dobar, ali se antena dijeli na mnogo ljudi pa je svakom sporije. Rješenje: dodati antenu u blizini da se gužva podijeli.'],
+};
+function doProbe(x, y) {
+  const r = probeAt(x, y, false);
+  S.probe = r ? Object.assign({ x, y }, r) : null;
+  $('cardProbe').style.display = 'block';
+  const el = $('probeInfo');
+  if (!r || r.none) { el.innerHTML = '<div class="bad" style="font-weight:700">Ovdje nema signala.</div><div class="note">Nijedna antena ne dopire do ovog mjesta.</div>'; return; }
+  const sw = sigWord(r.rsrp), w = WHY[r.cause];
+  const dist = r.nd >= 1000 ? (r.nd / 1000).toFixed(1) + ' km' : r.nd.toFixed(0) + ' m';
+  el.innerHTML = '<div class="' + (r.cause === 0 ? 'good' : 'bad') + '" style="font-weight:700;font-size:15.5px">' + w[0] + '</div>' +
+    '<div class="note" style="margin-top:2px">' + w[1] + '</div>' +
+    '<div class="kpi"><span class="d">Signal: </span><b class="' + sw[1] + '">' + sw[0] + '</b></div>' +
+    '<div class="kpi"><span class="d">Brzina interneta: </span><b>' + r.thr.toFixed(0) + ' Mbps</b></div>' +
+    '<div class="kpi"><span class="d">Najbliža antena: </span><b>' + r.near.code + ' (' + dist + ')</b></div>' +
+    '<div class="kpi"><span class="d">Ljudi na toj anteni: </span><b>' + r.load + '</b></div>';
+}
+$('probeClose').onclick = () => { S.probe = null; $('cardProbe').style.display = 'none'; requestDraw(); };
+
+// ---------- ocjena mreže ----------
+function updatePanels() {
+  const g = gridStats(), u = userStats(), l = loadStats();
+  const score = 0.5 * g.users100 / 100 + 0.5 * u.ok / 100;
+  const grade = Math.max(1, Math.min(5, Math.round(score * 5)));
+  const words = ['', 'Loša', 'Slaba', 'Prosječna', 'Dobra', 'Odlična'];
+  const act = NET.stations.filter(s => s.active).length;
+  $('cardGrade').innerHTML =
+    '<h3>Ocjena mreže <span style="font-weight:600;color:#666">' + words[grade] + '</span></h3>' +
+    '<div class="stars">' + '★'.repeat(grade) + '<span style="color:#d6dbe2">' + '★'.repeat(5 - grade) + '</span></div>' +
+    '<div class="kpi"><div class="n ' + (g.users100 >= 90 ? 'good' : g.users100 >= 70 ? 'warn' : 'bad') + '">' + g.users100.toFixed(0) + '%</div><div class="d">ljudi ima dobar signal</div></div>' +
+    '<div class="kpi"><div class="n">' + u.mean.toFixed(0) + ' Mbps</div><div class="d">prosječna brzina interneta</div></div>' +
+    '<div class="kpi"><div class="n ' + (u.ok >= 80 ? 'good' : u.ok >= 50 ? 'warn' : 'bad') + '">' + u.ok.toFixed(0) + '%</div><div class="d">ljudi ima brzinu za HD/4K video (bar ' + P.target + ' Mbps)</div></div>' +
+    '<div class="kpi"><div class="n ' + (l.over ? 'bad' : 'good') + '">' + l.over + '</div><div class="d">antena je prepuno (više od 20 ljudi na jednoj)</div></div>' +
+    '<div class="d" style="color:#777;font-size:12px;margin-top:8px">Antena u gradu: ' + act + (act !== NET.stations.length ? ' (od ' + NET.stations.length + ')' : '') + '</div>';
+}
+
+// ---------- „Šta je ovo?“ ----------
+function openDlg(html) { $('dlgBox').innerHTML = html + '<div style="margin-top:14px"><button class="pri" id="dlgClose">Razumijem</button></div>'; $('dlg').classList.add('show'); $('dlgClose').onclick = () => $('dlg').classList.remove('show'); }
+$('dlg').addEventListener('click', e => { if (e.target === $('dlg')) $('dlg').classList.remove('show'); });
+$('helpBtn').onclick = () => openDlg(
+  '<h2>Šta je ovo?</h2>' +
+  '<p>Ovo je <b>simulacija 5G mreže u gradu Prizrenu</b>. Program računa koliko jak signal dobija svako mjesto u gradu od 5G antena i kolika je brzina interneta, pa to boji na mapi.</p>' +
+  '<h3>Šta je 5G?</h3><p>Peta generacija mobilnog interneta. Brža je od 4G, ima manje kašnjenja (bitno za igrice i video pozive) i može da poveže mnogo više uređaja odjednom.</p>' +
+  '<h3>Šta su trouglovi na mapi?</h3><p>To su <b>antene</b> (bazne stanice). Svaka ima <b>3 lepeze</b>: tri smjera u koje šalje signal, pa jedna antena pokriva sve strane.</p>' +
+  '<h3>Šta znače boje?</h3>' +
+  '<p><span class="dot" style="background:#1a9641"></span><b>Zeleno</b> = jak signal (blizu antene)</p><p><span class="dot" style="background:#fddb7f"></span><b>Žuto</b> = srednji signal</p><p><span class="dot" style="background:#b2182b"></span><b>Crveno</b> = slab signal ili ga nema</p>' +
+  '<p>Tačkice su ljudi koji koriste internet: <b>zelena</b> = brz internet, <b>crvena</b> = spor.</p>' +
+  '<h3>Zašto je negdje slabo?</h3><p>Četiri glavna razloga: <b>1)</b> predaleko od antene, <b>2)</b> brdo ili zgrade blokiraju signal, <b>3)</b> signali susjednih antena smetaju jedan drugom, <b>4)</b> previše ljudi dijeli istu antenu. Klikni „Zašto je tu slabo?“ pa bilo koje mjesto na mapi.</p>' +
+  '<h3>Zašto gradovima treba mnogo antena?</h3><p>5G koristi više frekvencije koje su brže, ali dopiru kraće i teško prolaze kroz zidove. Zato se u gradu stavlja mnogo manjih antena blizu jedne drugima, umjesto par velikih.</p>' +
+  '<h3>Šta je Mbps?</h3><p>Brzina interneta. Za gledanje filma u 4K treba oko 25 Mbps. 5G može dati stotine Mbps kad je mreža slobodna.</p>' +
+  '<h3>Važno</h3><p>Ovo je <b>simulacija</b>, ne mjerenje. Pozicije antena su izmišljene, a brojevi dolaze iz formula koje se koriste u stvarnom planiranju mreža (standard 3GPP). Nemoj tvrditi da su to stvarne antene u Prizrenu.</p>');
+
+// ---------- VODIČ ----------
+let tourI = -1, tourSug = null;
+function baseline(band, scen) {
+  resetNetwork(); selectStation(null); S.suggestions = []; updateSugButtons(); S.probe = null; $('cardProbe').style.display = 'none';
+  setBand(band || '3.5', true); setScen(scen || 'vecer', true); setMode('pan');
+  S.view.lat = ORIGIN.lat; S.view.lon = ORIGIN.lon; S.view.zoom = 14;
+}
+const TOUR = [
+  { t: '1. Antene u gradu', p: 'Svaki <b>trougao</b> je jedna 5G antena, a svaka ima tri „lepeze“ - tri smjera u koje šalje signal. Ovako bi mogla izgledati mreža u gradu veličine Prizrena (pozicije su izmišljene).', act() { baseline(); setLayer('rsrp'); S.opacity = 0.0; $('opacity').value = 0; } },
+  { t: '2. Gdje se signal hvata', p: '<b>Zelena</b> znači jak signal, <b>crvena</b> slab. Vidiš da je signal najjači blizu antena, a što si dalje, to slabi. Rubovi grada su crveni jer tamo nema antena.', act() { baseline(); $('opacity').value = 65; S.opacity = 0.55; setLayer('rsrp'); } },
+  { t: '3. Koliko je internet brz', p: 'Brzina ne zavisi samo od signala nego i od toga <b>koliko ljudi dijeli antenu</b>. Tačkice su ljudi: zelena = brz internet, crvena = spor.', act() { baseline(); setLayer('thr'); } },
+  { t: '4. Kad dođe gužva (festival)', p: 'Pretpostavi da je festival u centru grada. Stotine ljudi se vežu na par antena i <b>brzina svima pada</b>. Pogledaj desno kako je ocjena mreže pala i koliko je antena prepuno.', act() { baseline('3.5', 'festival'); setLayer('thr'); } },
+  { t: '5. Kad antene pokvare', p: 'Zamisli nestanak struje: isključili smo <b>tri antene u centru</b> (prekrižene). Pogledaj kako u centru signal pada, a brzina se ruši jer preostale antene moraju preuzeti sve ljude. Zato mreže imaju antene koje se preklapaju.', act() { baseline(); for (const i of [0, 2, 3]) { NET.stations[i].active = false; NET.stations[i].dirty = 1; } selectStation(null); setLayer('thr'); S.gridDirty = true; } },
+  { t: '6. Zašto je negdje slabo?', p: 'Ova mapa boji grad po <b>uzroku problema</b>: crveno = predaleko od antene, plavo = antene smetaju jedna drugoj, žuto = previše ljudi. Probaj alat <b>„Zašto je tu slabo?“</b> pa klikni na neko obojeno mjesto.', act() { baseline(); setLayer('diag'); } },
+  { t: '7. Pametno dodavanje antena', p: 'Opet festival, ali ovaj put je program sam <b>izračunao najbolja mjesta za 3 nove antene</b> i dodao ih (nove antene su u centru, gdje je gužva). Uporedi ocjenu mreže desno sa slajdom 4: više antena znači da se gužva podijeli na više njih.', act() {
+      baseline('3.5', 'festival'); setLayer('thr');
+      const add = list => { for (const sg of list) addStation('Nova antena', sg.x, sg.y, sg.az); S.gridDirty = true; S.metricsDirty = true; requestDraw(); };
+      if (tourSug) add(tourSug); else runSuggest(list => { tourSug = list; if (tourI === 6) add(list); });
+    } },
+  { t: '8. Brže, ali kraći domet', p: 'Prebacili smo na <b>26 GHz</b>, najbržu 5G frekvenciju. Pogledaj: signal je skoro svuda crven jer ova frekvencija dopire samo nekoliko stotina metara. Zato gradovima s ovom frekvencijom treba <b>mnogo, mnogo antena</b>.', act() { baseline('26'); setLayer('rsrp'); } },
+  { t: '9. Zaključak', p: '<b>5G u gradu = mnogo manjih antena, blizu jedne drugima.</b> Što više frekvencija i što više ljudi, to je teže održati dobar signal svima, zato operatori stalno planiraju gdje da dodaju nove antene. Sada možeš i sam isprobati: klikni „Završi“ i mijenjaj stvari na mapi.', act() { baseline(); setLayer('rsrp'); } },
+];
+function renderTour() {
+  const s = TOUR[tourI], el = $('tour');
+  el.innerHTML = '<h2>' + s.t + '</h2><p>' + s.p + '</p><div class="nav"><div class="dots">' + TOUR.map((_, i) => '<i class="' + (i === tourI ? 'on' : '') + '"></i>').join('') + '</div><button id="tPrev"' + (tourI === 0 ? ' disabled' : '') + '>← Nazad</button>' + (tourI < TOUR.length - 1 ? '<button class="pri" id="tNext">Dalje →</button>' : '<button class="pri" id="tNext">Završi</button>') + '<button id="tClose">Zatvori</button></div>';
+  $('tPrev').onclick = () => gotoTour(tourI - 1);
+  $('tNext').onclick = () => (tourI < TOUR.length - 1 ? gotoTour(tourI + 1) : closeTour());
+  $('tClose').onclick = closeTour;
+}
+function gotoTour(i) { tourI = Math.max(0, Math.min(TOUR.length - 1, i)); $('tour').classList.add('show'); TOUR[tourI].act(); renderTour(); }
+function closeTour() { tourI = -1; $('tour').classList.remove('show'); baseline(); setLayer('rsrp'); $('opacity').value = 65; S.opacity = 0.55; }
+$('tourBtn').onclick = () => gotoTour(0);
+document.addEventListener('keydown', e => {
+  if (tourI >= 0 && e.key === 'ArrowRight') gotoTour(tourI + 1);
+  else if (tourI >= 0 && e.key === 'ArrowLeft') gotoTour(tourI - 1);
+  else if (e.key === 'Escape') { setMode('pan'); $('dlg').classList.remove('show'); }
+  else if (e.key === 'Delete' && S.selected) $('sDel').click();
+});
+
+// ---------- DEM (stvarni teren) ----------
+const DEM_URL = new URLSearchParams(location.search).get('dem') || 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+async function loadDEM() {
+  const z = 12, n = Math.pow(2, z), pad = 300;
+  const lo = xy2ll(-HALF - pad, -HALF - pad), hi = xy2ll(HALF + pad, HALF + pad);
+  const tx0 = Math.floor(worldX(lo.lon, z) / 256), tx1 = Math.floor(worldX(hi.lon, z) / 256);
+  const ty0 = Math.floor(worldY(hi.lat, z) / 256), ty1 = Math.floor(worldY(lo.lat, z) / 256);
+  const w = (tx1 - tx0 + 1) * 256, h = (ty1 - ty0 + 1) * 256;
+  const mos = document.createElement('canvas'); mos.width = w; mos.height = h; const mctx = mos.getContext('2d', { willReadFrequently: true });
+  const jobs = [];
+  for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+    jobs.push(new Promise((res, rej) => {
+      const img = new Image(); img.crossOrigin = 'anonymous';
+      img.onload = () => { mctx.drawImage(img, (tx - tx0) * 256, (ty - ty0) * 256); res(); };
+      img.onerror = () => rej(new Error('tile'));
+      img.src = DEM_URL.replace('{z}', z).replace('{x}', tx).replace('{y}', ty);
+    }));
+  }
+  await Promise.all(jobs);
+  const px = mctx.getImageData(0, 0, w, h).data, el = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) el[i] = px[i * 4] * 256 + px[i * 4 + 1] + px[i * 4 + 2] / 256 - 32768;
+  const s = 256 * n / (40075016.686 * Math.cos(ORIGIN.lat * Math.PI / 180));
+  DEM.setup(el, w, h, worldX(ORIGIN.lon, z) - tx0 * 256, worldY(ORIGIN.lat, z) - ty0 * 256, s);
+}
+function demApplied() { buildElevation(); CDF = null; buildWeights(); markAllDirty(); S.gridDirty = true; S.paintDirty = true; requestDraw(); }
+loadDEM().then(demApplied).catch(() => { DEM.clear(); demApplied(); });
+
+// ---------- petlja simulacije ----------
+let lastTick = performance.now(), tickN = 0;
+setInterval(() => {
+  const now = performance.now(), real = Math.min(1, (now - lastTick) / 1000); lastTick = now;
+  if (NET.cells.length === 0) return;
+  usersTick(real * 5, true);
+  tickN++;
+  if (tickN % 3 === 0) S.metricsDirty = true;
+  requestDraw();
+}, 200);
+setInterval(updatePanels, 600);
+window.addEventListener('resize', resize);
+
+// ---------- start ----------
+function boot() {
+  resetNetwork(); buildWeights();
+  USERS.test = null; USERS.nEvent = 0; USERS.nBase = 200;
+  setUserCounts(200, 0);
+  resize(); updateLegend(); selectStation(null);
+  S.gridDirty = true; requestDraw();
+  setTimeout(() => toast('Klikni „▶ Vodič“ gore da te program provede kroz cijelu priču.'), 1200);
+}
+boot();
+
+</script>
+</body>
+</html>
